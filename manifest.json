@@ -1,17 +1,17 @@
 {
-  "name": "Lua Deobfuscator",
-  "short_name": "Deobfuscator",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#1a1e23",
-  "theme_color": "#00a2ff",
+  "short_name": "Desobf",
+  "name": "Lua Desobscufator",
+  "description": "Déchiffre et nettoie les scripts Lua obfusqués.",
   "icons": [
     {
       "src": "icon.png",
-      "sizes": "512x512",
       "type": "image/png",
+      "sizes": "512x512",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#00a2ff",
+  "background_color": "#1a1e23"
 }
-
