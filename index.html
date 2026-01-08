@@ -4,40 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Desobscufator | NeonFart</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00a2ff">
+
     <style>
         :root { --bg: #1a1e23; --card: #252a33; --acc: #00a2ff; --txt: #e0e0e0; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--txt); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { display: flex; gap: 20px; width: 100%; max-width: 1100px; flex-wrap: wrap; }
-        .box { flex: 1; min-width: 300px; background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid #3f4756; }
-        textarea { width: 100%; height: 350px; background: #1d2129; border: 1px solid #3f4756; color: #fff; padding: 10px; box-sizing: border-box; font-family: monospace; margin-top: 10px; }
-        button { background: var(--acc); color: white; border: none; padding: 12px 30px; border-radius: 20px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        h1 { color: white; margin-bottom: 5px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--txt); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; margin-top: 20px; }
+        .box { flex: 1; min-width: 350px; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #3f4756; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        textarea { width: 100%; height: 400px; background: #1d2129; border: 1px solid #3f4756; color: #d1d1d1; padding: 12px; box-sizing: border-box; font-family: 'Consolas', monospace; font-size: 0.9rem; border-radius: 8px; resize: none; }
+        button#main-btn { background: var(--acc); color: white; border: none; padding: 15px 50px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.1rem; margin-top: 30px; transition: 0.3s; box-shadow: 0 5px 15px rgba(0, 162, 255, 0.4); }
+        button#main-btn:hover { transform: scale(1.05); background: #0086d4; }
+        h1 { margin: 0; color: white; }
     </style>
 </head>
 <body>
 
     <h1>Desobscufator</h1>
-    <p style="color:#888; margin-bottom:20px;">NeonFart Multi-Decoder Edition</p>
+    <p style="color:#888;">NeonFart - Smart Reconstructor Edition</p>
 
     <div class="container">
         <div class="box">
-            <span>INPUT (Code Obfusqué)</span>
-            <textarea id="input" placeholder="Colle le code ici..."></textarea>
+            <div style="display:flex; justify-content:space-between;">
+                <span>CODE OBFUSQUÉ</span>
+                <button style="background:none; border:none; color:#555; cursor:pointer;" onclick="document.getElementById('input').value=''">Effacer</button>
+            </div>
+            <textarea id="input" placeholder="Colle ton code ici (WearthDev, Shield, etc.)..."></textarea>
         </div>
         <div class="box">
-            <span>OUTPUT (Code Potable)</span>
-            <textarea id="output" readonly placeholder="Le résultat apparaîtra ici..."></textarea>
+            <span>CODE POTABLE (PROPRE)</span>
+            <textarea id="output" readonly placeholder="Le code déchiffré apparaîtra ici..."></textarea>
         </div>
     </div>
 
-    <button onclick="process()">DÉSOBFUSQUER</button>
+    <button id="main-btn" onclick="universalProcess()">DÉSOBFUSQUER ET NETTOYER</button>
 
     <script>
-        function process() {
+        // Enregistrement du Service Worker pour l'installation
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW Error:", err));
+        }
+
+        function universalProcess() {
             let input = document.getElementById('input').value;
             let out = document.getElementById('output');
-            
-            // Logique Shield (Math)
+            if(!input) return;
+
+            // 1. Décodage Lua Shield (Math Offset -10, etc.)
             const shieldArr = input.match(/\{\s*([\d\s,]+)\s*\}/);
             const shieldMath = input.match(/char\(.*?\s*([+-])\s*(\d+)\)/);
 
@@ -45,17 +59,37 @@
                 const nums = shieldArr[1].split(',').map(n => parseInt(n.trim()));
                 const op = shieldMath[1];
                 const val = parseInt(shieldMath[2]);
-                let res = "";
-                nums.forEach(n => { res += String.fromCharCode(op === "-" ? n - val : n + val); });
-                out.value = "-- [RECONSTRUCTED SHIELD]\n" + res;
+                let decoded = "";
+                nums.forEach(n => { decoded += String.fromCharCode(op === "-" ? n - val : n + val); });
+                out.value = "-- [RECONSTRUCTION SHIELD RÉUSSIE]\n" + decoded;
                 return;
             }
 
-            // Logique VM (Nettoyage simple)
+            // 2. Décodage WearthDev / VM (Remplacement des constantes)
             let clean = input.replace(/\\(\d{1,3})/g, (m, p) => String.fromCharCode(parseInt(p, 10)));
-            clean = clean.replace(/local\s/g, '\nlocal ').replace(/then/g, ' then\n').replace(/end/g, '\nend');
             
-            out.value = "-- [RECONSTRUCTED VM/GENERIC]\n" + clean;
+            // Tentative de mapping du tableau x = {...}
+            const tableMatch = clean.match(/local\s+\w+\s*=\s*\{([\s\S]*?)\}/);
+            if (tableMatch) {
+                const strings = tableMatch[1].match(/"[^"]*"|'[^']*'/g);
+                if (strings) {
+                    const constants = strings.map(s => s.slice(1, -1));
+                    clean = clean.replace(/\w+\[(\d+)\]/g, (match, index) => {
+                        let idx = parseInt(index) - 1;
+                        return constants[idx] ? '"' + constants[idx] + '"' : match;
+                    });
+                }
+            }
+
+            // 3. Embellissement pour rendre "potable"
+            clean = clean.replace(/local\s/g, '\nlocal ')
+                         .replace(/then/g, ' then\n    ')
+                         .replace(/else/g, '\nelse\n    ')
+                         .replace(/end/g, '\nend\n')
+                         .replace(/;/g, '\n')
+                         .replace(/\n\s*\n/g, '\n');
+
+            out.value = "-- [CODE RECONSTRUIT PAR NEONFART]\n" + clean;
         }
     </script>
 </body>
