@@ -22,7 +22,6 @@
             --success: #3fb950;
         }
 
-        /* FIX DU SCROLL MOBILE */
         html, body {
             margin: 0;
             padding: 0;
@@ -30,17 +29,12 @@
             min-height: 100%;
             background-color: var(--bg);
             overflow-x: hidden;
-            overflow-y: auto; /* Autorise le scroll vertical */
-            display: block; /* Important pour le scroll */
+            overflow-y: auto;
+            display: block;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            color: var(--text);
-            text-align: center;
-        }
+        body { font-family: 'Inter', sans-serif; color: var(--text); text-align: center; }
 
-        /* FIX DU CANVAS (FOND FIXE) */
         #bg-canvas {
             position: fixed;
             top: 0;
@@ -48,8 +42,8 @@
             width: 100vw;
             height: 100vh;
             z-index: -1;
-            pointer-events: none; /* Laisse passer les clics et le scroll */
-            touch-action: none;   /* Empêche le canvas d'intercepter le toucher mobile */
+            pointer-events: none;
+            touch-action: none;
         }
 
         header { padding: 40px 0; }
@@ -65,7 +59,7 @@
             border-radius: 16px;
             border: 1px solid var(--border);
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            margin: 0 auto 50px auto; /* Centre la boite */
+            margin: 0 auto 50px auto;
             text-align: left;
         }
 
@@ -109,9 +103,12 @@
             border-radius: 8px;
             font-weight: 700;
             cursor: pointer;
+            text-transform: uppercase;
         }
 
         .btn-copy { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-right: 10px; }
+        #statusText { font-size: 0.9rem; color: #8b949e; }
+        .success-msg { color: var(--success) !important; font-weight: bold; }
 
         @media (max-width: 768px) {
             .editor-container { grid-template-columns: 1fr; }
@@ -126,42 +123,39 @@
 
     <header>
         <h1>Neon<span>Desobf</span></h1>
-        <p>Professional Roblox Deobfuscator</p>
+        <p>Professional Roblox Deobfuscator & Reconstructor</p>
     </header>
 
     <div class="container">
         <div class="editor-container">
             <div>
                 <label>OBFUSCATED SOURCE</label>
-                <textarea id="inputCode" placeholder="Colle le code ici..."></textarea>
+                <textarea id="inputCode" placeholder="Paste your obfuscated code here..."></textarea>
             </div>
             <div>
-                <label>POTABLE CODE</label>
-                <textarea id="outputCode" readonly></textarea>
+                <label>POTABLE OUTPUT (CLEAN)</label>
+                <textarea id="outputCode" readonly placeholder="Reconstructed code will appear here..."></textarea>
             </div>
         </div>
         <div class="controls">
             <span id="statusText">System Ready</span>
             <div>
-                <button class="btn btn-copy" onclick="copyToClipboard()">Copy</button>
+                <button class="btn btn-copy" onclick="copyToClipboard()">Copy Result</button>
                 <button class="btn" onclick="deobfuscate()">Deobfuscate</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- ANIMATION DES ÉTOILES (FIXÉE) ---
+        // --- ANIMATION DES ÉTOILES ---
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-
         function resizeCanvas() {
-            // On force la taille sur la fenêtre visible uniquement (pas la page entière)
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             initParticles();
         }
-
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width;
@@ -171,70 +165,108 @@
                 this.speedY = Math.random() * 0.4 - 0.2;
             }
             update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.x < 0) this.x = canvas.width;
-                if (this.y > canvas.height) this.y = 0;
-                if (this.y < 0) this.y = canvas.height;
+                this.x += this.speedX; this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0; if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0; if (this.y < 0) this.y = canvas.height;
             }
             draw() {
-                ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
             }
         }
-
         function initParticles() {
             particles = [];
             for (let i = 0; i < 60; i++) particles.push(new Particle());
         }
-
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
+                particles[i].update(); particles[i].draw();
                 for (let j = i; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < 120) {
                         ctx.strokeStyle = `rgba(0, 212, 255, ${1 - (dist / 120)})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
+                        ctx.lineWidth = 0.5; ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
+                        ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
                     }
                 }
             }
             requestAnimationFrame(animate);
         }
-
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        animate();
+        resizeCanvas(); animate();
 
-        // --- LOGIQUE DEOBF ---
+        // --- LOGIQUE DE DÉOBSFUCATION PUISSANTE ---
         function deobfuscate() {
             const input = document.getElementById('inputCode').value;
             const output = document.getElementById('outputCode');
+            const status = document.getElementById('statusText');
             if (!input.trim()) return;
 
-            // Simple reconstruction
-            let clean = input.replace(/\\(\d{1,3})/g, (m, p) => String.fromCharCode(parseInt(p, 10)));
-            output.value = "--[[ DEOBFUSCATED ]]\n" + clean;
-            document.getElementById('statusText').innerText = "✅ Done!";
+            status.innerText = "Processing...";
+            status.classList.remove('success-msg');
+
+            setTimeout(() => {
+                let result = "";
+
+                // 1. Détection Shield (Math offset)
+                const shieldArr = input.match(/\{\s*([\d\s,]+)\s*\}/);
+                const shieldMath = input.match(/char\(.*?\s*([+-])\s*(\d+)\)/);
+
+                if (shieldArr && shieldMath) {
+                    const nums = shieldArr[1].split(',').map(n => parseInt(n.trim()));
+                    const op = shieldMath[1];
+                    const val = parseInt(shieldMath[2]);
+                    let decoded = "";
+                    nums.forEach(n => {
+                        decoded += String.fromCharCode(op === "-" ? n - val : n + val);
+                    });
+                    result = "--[[ RECONSTRUCTED FROM NEON-SHIELD ]]\n" + decoded;
+                } else {
+                    // 2. Détection VM / WearthDev / Luraph
+                    let clean = input.replace(/\\(\d{1,3})/g, (m, p) => String.fromCharCode(parseInt(p, 10)));
+                    clean = clean.replace(/\\x([0-9A-Fa-f]{2})/g, (m, p) => String.fromCharCode(parseInt(p, 16)));
+
+                    // Reconstruction des constantes
+                    const tableMatch = clean.match(/local\s+\w+\s*=\s*\{([\s\S]*?)\}/);
+                    if (tableMatch) {
+                        const strings = tableMatch[1].match(/"[^"]*"|'[^']*'/g);
+                        if (strings) {
+                            const constants = strings.map(s => s.slice(1, -1));
+                            clean = clean.replace(/\w+\[(\d+)\]/g, (match, index) => {
+                                let idx = parseInt(index) - 1;
+                                return constants[idx] ? '"' + constants[idx] + '"' : match;
+                            });
+                        }
+                    }
+
+                    // Embellissement (Mode Potable)
+                    clean = clean.replace(/local\s/g, '\nlocal ')
+                                 .replace(/then/g, ' then\n    ')
+                                 .replace(/else/g, '\nelse\n    ')
+                                 .replace(/end/g, '\nend\n')
+                                 .replace(/;/g, '\n');
+                    
+                    result = "--[[ GENERIC RECONSTRUCTION ]]\n" + clean;
+                }
+
+                output.value = result;
+                status.innerText = "✅ Deobfuscated!";
+                status.classList.add('success-msg');
+            }, 500);
         }
 
         function copyToClipboard() {
             const output = document.getElementById('outputCode');
+            if(!output.value) return;
             output.select();
             document.execCommand('copy');
-            alert("Copied!");
+            alert("Copied to clipboard!");
         }
     </script>
 </body>
-</html>
+                                            </html>
+                    
