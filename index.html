@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +16,7 @@
             --text: #c9d1d9;
             --border: #30363d;
             --success: #3fb950;
+            --import-btn: #238636;
         }
 
         body {
@@ -76,6 +78,10 @@
 
         .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--accent-glow); }
         .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+        
+        /* New Import Button Style */
+        .btn-import { background: var(--import-btn); color: #fff; }
+        .btn-import:hover { background: #2ea043; box-shadow: 0 0 15px rgba(46, 160, 67, 0.4); }
 
         #statusText { font-size: 13px; color: #8b949e; font-family: 'Fira Code', monospace; }
         .success { color: var(--success) !important; }
@@ -107,6 +113,9 @@
         <div class="actions">
             <span id="statusText">System: IDLE</span>
             <div class="btn-group">
+                <input type="file" id="fileInput" accept=".txt,.lua" style="display: none;" onchange="handleFileImport(this)">
+                <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">Import File</button>
+                
                 <button class="btn btn-secondary" onclick="copyResult()">Copy Result</button>
                 <button class="btn" onclick="runDeobfuscator()">Deobfuscate</button>
             </div>
@@ -136,6 +145,23 @@
             requestAnimationFrame(animate); 
         }
         animate();
+
+        // New File Import Logic
+        function handleFileImport(input) {
+            const file = input.files[0];
+            const status = document.getElementById('statusText');
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('inputCode').value = e.target.result;
+                status.innerHTML = `<span class="success">LOADED: ${file.name}</span>`;
+            };
+            reader.onerror = function() {
+                status.innerHTML = `<span style="color: #f85149">ERROR LOADING FILE</span>`;
+            };
+            reader.readAsText(file);
+        }
 
         // Main Logic
         function runDeobfuscator() {
@@ -215,4 +241,3 @@
     </script>
 </body>
 </html>
-
