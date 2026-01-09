@@ -31,6 +31,23 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            position: relative; /* Important pour positionner le canvas */
+            overflow: hidden; /* Empêche les barres de défilement dues au canvas */
+        }
+
+        #bg-canvas {
+            position: fixed; /* Fixe le canvas en arrière-plan */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place le canvas derrière le contenu */
+            background-color: var(--bg); /* Pour s'assurer que le fond est bien sombre */
+        }
+
+        header, .container {
+            position: relative; /* Met le contenu au-dessus du canvas */
+            z-index: 1;
         }
 
         header { margin: 40px 0; text-align: center; }
@@ -111,11 +128,18 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
         .success-msg { color: var(--success) !important; font-weight: bold; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .editor-container { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; gap: 15px; }
+            .btn-copy { margin-right: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <header>
+    <canvas id="bg-canvas"></canvas> <header>
         <h1>Neon<span>Desobf</span></h1>
         <p>Professional Roblox Deobfuscator & Cleaner</p>
     </header>
@@ -124,11 +148,11 @@
         <div class="editor-container">
             <div>
                 <label>OBFUSCATED SOURCE</label>
-                <textarea id="inputCode" placeholder="Paste the obscufated code here..."></textarea>
+                <textarea id="inputCode" placeholder="Colle le code obfusqué ici..."></textarea>
             </div>
             <div>
-                <label>DESOBSCUFATED CODE</label>
-                <textarea id="outputCode" readonly placeholder="Desobscufated code here..."></textarea>
+                <label>POTABLE CODE (RECONSTRUCTED)</label>
+                <textarea id="outputCode" readonly placeholder="Le code propre apparaîtra ici..."></textarea>
             </div>
         </div>
         <div class="controls">
@@ -149,6 +173,7 @@
             navigator.serviceWorker.register('sw.js');
         }
 
+        // --- Logic du Désobfuscateur (inchangé) ---
         function deobfuscate() {
             const input = document.getElementById('inputCode').value;
             const output = document.getElementById('outputCode');
@@ -201,7 +226,82 @@
             document.execCommand('copy');
             alert("Copied to clipboard!");
         }
+
+        // --- Logic de l'animation des étoiles ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const numParticles = 80; // Nombre d'étoiles
+        const maxDist = 150;     // Distance max pour relier les étoiles
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5; // Taille des étoiles
+                this.speedX = Math.random() * 0.4 - 0.2; // Mouvement lent
+                this.speedY = Math.random() * 0.4 - 0.2;
+                this.color = `rgba(255, 255, 255, ${Math.random() * 0.8 + 0.2})`; // Transparence variable
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Rebondir sur les bords
+                if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+                if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Relier les particules proches
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < maxDist) {
+                        ctx.strokeStyle = `rgba(0, 212, 255, ${1 - (distance / maxDist)})`; // Couleur accent avec transparence
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initParticles();
+        animate();
     </script>
 </body>
-            </html>
-            
+    </html>
+    
